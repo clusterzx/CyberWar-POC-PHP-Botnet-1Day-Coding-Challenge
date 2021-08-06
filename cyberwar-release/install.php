@@ -3,6 +3,44 @@ include 'inc/db.php';
 include 'inc/config.php';
 $success = false;
 $msg = "";
+
+		function replace_in_file($FilePath, $OldText, $NewText)
+		{
+			$Result = array('status' => 'error', 'message' => '');
+			if(file_exists($FilePath)===TRUE)
+			{
+				if(is_writeable($FilePath))
+				{
+					try
+					{
+						$FileContent = file_get_contents($FilePath);
+						$FileContent = str_replace($OldText, $NewText, $FileContent);
+						if(file_put_contents($FilePath, $FileContent) > 0)
+						{
+							$Result["status"] = 'success';
+						}
+						else
+						{
+						$Result["message"] = 'Error while writing file';
+						}
+					}
+					catch(Exception $e)
+					{
+						$Result["message"] = 'Error : '.$e;
+					}
+				}
+				else
+				{
+					$Result["message"] = 'File '.$FilePath.' is not writable !';
+				}
+			}
+			else
+			{
+				$Result["message"] = 'File '.$FilePath.' does not exist !';
+			}
+			//return $Result;
+		}
+
 if(isset($_GET['databaseHost']) && isset($_GET['databaseUser']) && isset($_GET['databasePassword']) && isset($_GET['webpanelUsername']) && isset($_GET['webpanelPassword'])){
 
 	// Name of the data file
@@ -18,96 +56,65 @@ if(isset($_GET['databaseHost']) && isset($_GET['databaseUser']) && isset($_GET['
 	// Webpanel Password
 	$webpanelPassword = $_GET['webpanelPassword'];
 
-	// Create connection
-	$conn = new mysqli($mysqlHost, $mysqlUser, $mysqlPassword);
-	// Check connection
-	if ($conn->connect_error) {
-		$msg .=  "Connection failed: " . $conn->connect_error;
-	}
+	if(!empty($mysqlHost) && !empty($mysqlUser) && !empty($mysqlPassword) && !empty($webpanelUser) && !empty($webpanelPassword)){
+			// Create connection
+			$conn = new mysqli($mysqlHost, $mysqlUser, $mysqlPassword);
+			// Check connection
+			if ($conn->connect_error) {
+				$msg .=  "Connection failed to Database";//. $conn->connect_error;
+			}
 
-	// Create database
-	$sql = "CREATE DATABASE cyberwar_db";
-	if ($conn->query($sql) === TRUE) {
-		$msg .= "Creating Database .... DONE</br>";
-	} else {
-		$msg .= "Error creating database: " . $conn->error;
-	}
+			// Create database
+			$sql = "CREATE DATABASE cyberwar_db";
+			if ($conn->query($sql) === TRUE) {
+				$msg .= "Creating Database .... DONE</br>";
+			} else {
+				$msg .= "Error creating database: "; //. $conn->error;
+			}
 
-	$conn->close();
+			$conn->close();
 
-	// Connect to MySQL server
-	$link = mysqli_connect($mysqlHost, $mysqlUser, $mysqlPassword, "cyberwar_db") or die('Error connecting to MySQL Database: ' . mysqli_error());
+			// Connect to MySQL server
+			$link = mysqli_connect($mysqlHost, $mysqlUser, $mysqlPassword, "cyberwar_db") or die('Error connecting to MySQL Database: ' . mysqli_error());
 
 
-	$tempLine = '';
-	// Read in the full file
-	$lines = file($filename);
-	// Loop through each line
-	foreach ($lines as $line) {
-
-		// Skip it if it's a comment
-		if (substr($line, 0, 2) == '--' || $line == '')
-			continue;
-
-		// Add this line to the current segment
-		$tempLine .= $line;
-		// If its semicolon at the end, so that is the end of one query
-		if (substr(trim($line), -1, 1) == ';')  {
-			// Perform the query
-			mysqli_query($link, $tempLine) or print("Error in " . $tempLine .":". mysqli_error());
-			// Reset temp variable to empty
 			$tempLine = '';
-		}
-	}
-	$options = [
-		'cost' => 12,
-	];
-	$db = new db($mysqlHost, $mysqlUser, $mysqlPassword, "cyberwar_db");
-	$sqlInsertUser = "INSERT INTO users (username, password) VALUES ('" .$webpanelUser. "','" .password_hash($webpanelPassword, PASSWORD_BCRYPT, $options). "')";
-	$createResult = $db->query($sqlInsertUser);
-	$success = true;
-	$msg .= "User created .... DONE </br>";
+			// Read in the full file
+			$lines = file($filename);
+			// Loop through each line
+			foreach ($lines as $line) {
+
+				// Skip it if it's a comment
+				if (substr($line, 0, 2) == '--' || $line == '')
+					continue;
+
+				// Add this line to the current segment
+				$tempLine .= $line;
+				// If its semicolon at the end, so that is the end of one query
+				if (substr(trim($line), -1, 1) == ';')  {
+					// Perform the query
+					mysqli_query($link, $tempLine) or print("Error in " . $tempLine .":". mysqli_error());
+					// Reset temp variable to empty
+					$tempLine = '';
+				}
+			}
+			$options = [
+				'cost' => 12,
+			];
+			$db = new db($mysqlHost, $mysqlUser, $mysqlPassword, "cyberwar_db");
+			$sqlInsertUser = "INSERT INTO users (username, password) VALUES ('" .$webpanelUser. "','" .password_hash($webpanelPassword, PASSWORD_BCRYPT, $options). "')";
+			$createResult = $db->query($sqlInsertUser);
+			$success = true;
+			$msg .= "User created .... DONE </br>";
+			
+			replace_in_file("inc/config.php", "%HOST%", $mysqlHost);
+			replace_in_file("inc/config.php", "%USER%", $mysqlUser);
+			replace_in_file("inc/config.php", "%PASS%", $mysqlPassword);
+			$msg .= "Changing config.php .... DONE </br>";
+		} else {
 	
-	replace_in_file("inc/config.php", "%HOST%", $mysqlHost);
-	replace_in_file("inc/config.php", "%USER%", $mysqlUser);
-	replace_in_file("inc/config.php", "%PASS%", $mysqlPassword);
-	$msg .= "Changing config.php .... DONE </br>";
-}
-function replace_in_file($FilePath, $OldText, $NewText)
-{
-    $Result = array('status' => 'error', 'message' => '');
-    if(file_exists($FilePath)===TRUE)
-    {
-        if(is_writeable($FilePath))
-        {
-            try
-            {
-                $FileContent = file_get_contents($FilePath);
-                $FileContent = str_replace($OldText, $NewText, $FileContent);
-                if(file_put_contents($FilePath, $FileContent) > 0)
-                {
-                    $Result["status"] = 'success';
-                }
-                else
-                {
-                   $Result["message"] = 'Error while writing file';
-                }
-            }
-            catch(Exception $e)
-            {
-                $Result["message"] = 'Error : '.$e;
-            }
-        }
-        else
-        {
-            $Result["message"] = 'File '.$FilePath.' is not writable !';
-        }
-    }
-    else
-    {
-        $Result["message"] = 'File '.$FilePath.' does not exist !';
-    }
-    //return $Result;
+		$msg .= "Error: You have to fill out all fields!";
+		}
 }
 ?>
 <!DOCTYPE html>
