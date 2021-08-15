@@ -17,7 +17,7 @@ Installation guide (quick):
 
 Dashboard:
 
-![Screenshot Dashboard](https://i.ibb.co/L6xDJHD/dashboard.png)
+![Screenshot Dashboard](https://i.ibb.co/MpcyGQy/dashboard.png)
 
 Clients:
 ![Screenshot Victims](https://i.ibb.co/3kgkCb0/victims.png)
