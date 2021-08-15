@@ -16,6 +16,7 @@ Installation guide (quick):
 5. Happy (pen-)testing
 
 Dashboard:
+
 ![Screenshot Dashboard](https://i.ibb.co/L6xDJHD/dashboard.png)
 
 Clients:
